@@ -1,0 +1,40 @@
+version: "3"
+x-v10-redash-service: &redash-v11-service
+  image: samzong/redash:v1.0
+  depends_on:
+    - postgres
+    - redis
+  env_file: /Users/samzonglu/deploy/v11-redash.io/env
+services:
+  server:
+    <<: *redash-v10-service
+    command: server
+    ports:
+      - "50505:5000"
+    environment:
+      REDASH_WEB_WORKERS: 1
+  scheduler:
+    <<: *redash-v11-service
+    command: scheduler
+    environment:
+      QUEUES: "celery"
+      WORKERS_COUNT: 1
+  scheduled_worker:
+    <<: *redash-v11-service
+    command: worker
+    environment:
+      QUEUES: "scheduled_queries,schemas"
+      WORKERS_COUNT: 1
+  adhoc_worker:
+    <<: *redash-v11-service
+    command: worker
+    environment:
+      QUEUES: "queries"
+      WORKERS_COUNT: 1
+  redis:
+    image: redis:6.0-alpine
+  postgres:
+    image: postgres:9.6-alpine
+    env_file: /Users/samzonglu/deploy/v11-redash.io/env
+    volumes:
+      - /Users/samzonglu/deploy/v11-redash.io/postgres-data:/var/lib/postgresql/data
